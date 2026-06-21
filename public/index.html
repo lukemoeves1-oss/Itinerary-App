@@ -115,55 +115,63 @@ function App() {
   const canProceed = stops.some((s) => s.destination);
 
   const buildPrompt = () => {
-    const pts = form.includePoints ? `\n\nThe client has these credit cards: ${form.cardPortfolio || "not specified"}. Include a "💳 Points & Miles Strategy" section with transfer partners, estimated point values, and booking tips.` : "";
+    const pts = form.includePoints
+      ? `\n\n## 💳 Points & Miles Strategy\nCards: ${form.cardPortfolio || "not specified"}. Best transfer partners, estimated point values for flights/hotels, and 2-3 specific booking tips.`
+      : "";
     const detail = stops.map((s, i) => {
       const n = s.startDate && s.endDate ? nightsBetween(s.startDate, s.endDate) : "?";
       return `  Stop ${i + 1}: ${s.destination || "TBD"} — ${s.startDate || "?"} to ${s.endDate || "?"} (${n} nights)`;
     }).join("\n");
     const summary = isMulti ? `Multi-city trip:\n${detail}` : `${stops[0].destination} from ${stops[0].startDate || "TBD"} to ${stops[0].endDate || "TBD"} (${totalNights()} nights)`;
-    const cityHeaders = isMulti
+
+    const dayPlans = isMulti
       ? stops.filter((s) => s.destination).map((s) => {
           const n = s.startDate && s.endDate ? nightsBetween(s.startDate, s.endDate) : 3;
-          return `## 📍 ${s.destination} (${s.startDate || "?"} – ${s.endDate || "?"})\n(Day-by-day plan for all ${n} nights with morning/afternoon/evening, specific restaurants, attractions, tips, costs)`;
+          const days = Array.from({ length: n }, (_, i) => `### Day ${i + 1}\n**Morning:** [activity + 1 specific tip]\n**Afternoon:** [activity + why it's worth it]\n**Evening:** [dinner spot + must-order dish]`).join("\n\n");
+          return `## 📍 ${s.destination} (${s.startDate || "?"} – ${s.endDate || "?"})\n\n${days}`;
         }).join("\n\n")
-      : `## 🗓️ Day-by-Day Plan\n(Full ${totalNights()}-night plan with morning/afternoon/evening each day, specific restaurants with dishes, attractions with "why go" notes, tips, estimated costs)`;
+      : (() => {
+          const n = totalNights();
+          const days = Array.from({ length: n }, (_, i) => `### Day ${i + 1}\n**Morning:** [activity + 1 specific tip]\n**Afternoon:** [activity + why it's worth it]\n**Evening:** [dinner spot + must-order dish]`).join("\n\n");
+          return `## 🗓️ Day-by-Day Plan\n\n${days}`;
+        })();
 
-    return `You are an expert travel planner creating a premium, personalized itinerary for a paying client. Be specific, practical, and enthusiastic.
+    return `You are an expert travel planner writing a premium itinerary for a paying client. Be specific and use REAL place names only.
 
-TRIP DETAILS:
+TRIP:
 - ${summary}
-- Departing from: ${form.departureCity || "not specified"}
-- Group size: ${form.groupSize} people
-- Budget level: ${form.budget}
-- Travel pace: ${form.pace}
+- From: ${form.departureCity || "not specified"}
+- Group: ${form.groupSize} people
+- Budget: ${form.budget}
+- Pace: ${form.pace}
 - Interests: ${form.interests.length ? form.interests.join(", ") : "general sightseeing"}
-- Special requests: ${form.specialRequests || "none"}${pts}
+- Special requests: ${form.specialRequests || "none"}
 
-Create a detailed itinerary with this structure:
+CRITICAL: Fill in EVERY day in the day-by-day section. Do not skip days or summarize. Write all ${totalNights()} days completely before moving to the next section.
+
+Write the itinerary now, using exactly this structure:
 
 # ✈️ ${isMulti ? stops.map((s) => s.destination).filter(Boolean).join(" → ") : stops[0].destination} Itinerary
 
 ## 🗺️ Trip Overview
-(2-3 sentences on the trip vibe)
+2-3 sentences on the overall vibe and what makes this trip special.
 
 ## 📋 Pre-Trip Checklist
-(5-7 practical items)
+- [5 practical pre-departure items: visas, vaccines, apps to download, currency, etc.]
 
-${cityHeaders}
+${dayPlans}
 
 ## 🏨 Where to Stay
-(3 hotel recommendations per city across budget tiers)
+For each city: 1 budget pick, 1 mid-range, 1 splurge — with real hotel names and one reason to choose each.
 
 ## 🍽️ Don't-Miss Restaurants
-(5 standout restaurants per city with cuisine and must-order dishes)
+For each city: 3 standout restaurants with cuisine type and the one dish to order.
 
-## 💡 Local Tips & Insider Hacks
-(5-7 tips)
+## 💡 Local Tips
+5 insider tips that most tourists miss.
 
 ## 🚌 Getting Around
-(Transportation overview, including between cities if multi-city)${form.includePoints ? '\n\n## 💳 Points & Miles Strategy\n(Detailed recommendations)' : ''}
-
-Use real place names, real restaurants, and real practical advice only.`;
+How to get between cities and around each city efficiently.${pts}`;
   };
 
   const generate = async () => {
