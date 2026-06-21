@@ -99,6 +99,7 @@ export default async function handler(req) {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'X-Content-Type-Options': 'nosniff',
+      'X-Runtime': 'edge-streaming',
     },
   });
 }

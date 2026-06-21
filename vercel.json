@@ -1,5 +1,10 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/public/index.html" }
-  ]
+  ],
+  "functions": {
+    "api/generate.js": {
+      "runtime": "edge"
+    }
+  }
 }
