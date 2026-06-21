@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Itinerary Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+const { useState } = React;
+
+const inputClass = "w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-amber-400 transition-colors text-sm";
+const labelClass = "block text-xs font-semibold uppercase tracking-widest text-amber-400 mb-2";
+
+const DESTINATIONS = {
+  "🌏 Asia": ["Tokyo, Japan","Kyoto, Japan","Osaka, Japan","Seoul, South Korea","Bangkok, Thailand","Chiang Mai, Thailand","Bali, Indonesia","Singapore","Hong Kong","Taipei, Taiwan","Ho Chi Minh City, Vietnam","Hanoi, Vietnam","Hoi An, Vietnam","Phuket, Thailand","Siem Reap, Cambodia","Kathmandu, Nepal","Mumbai, India","Delhi, India","Jaipur, India","Maldives"],
+  "🌍 Europe": ["Paris, France","London, England","Rome, Italy","Florence, Italy","Venice, Italy","Amsterdam, Netherlands","Barcelona, Spain","Madrid, Spain","Lisbon, Portugal","Porto, Portugal","Prague, Czech Republic","Budapest, Hungary","Vienna, Austria","Santorini, Greece","Athens, Greece","Dubrovnik, Croatia","Edinburgh, Scotland","Dublin, Ireland","Copenhagen, Denmark","Stockholm, Sweden","Oslo, Norway","Reykjavik, Iceland","Zurich, Switzerland","Munich, Germany","Berlin, Germany","Brussels, Belgium","Bruges, Belgium","Amalfi Coast, Italy"],
+  "🌎 Americas": ["New York City, USA","Los Angeles, USA","Chicago, USA","Miami, USA","New Orleans, USA","San Francisco, USA","Las Vegas, USA","Nashville, USA","Cancun, Mexico","Mexico City, Mexico","Tulum, Mexico","Puerto Vallarta, Mexico","Toronto, Canada","Vancouver, Canada","Montreal, Canada","Quebec City, Canada","Rio de Janeiro, Brazil","Buenos Aires, Argentina","Cartagena, Colombia","Machu Picchu, Peru","Lima, Peru","Havana, Cuba","San José, Costa Rica"],
+  "🌴 Caribbean & Pacific": ["Turks and Caicos","Aruba","St. Lucia","Barbados","Jamaica","Bahamas","Bora Bora, French Polynesia","Fiji","Hawaii, USA","Punta Cana, Dominican Republic","Cabo San Lucas, Mexico"],
+  "🌏 Middle East & Africa": ["Dubai, UAE","Abu Dhabi, UAE","Marrakech, Morocco","Cape Town, South Africa","Zanzibar, Tanzania","Serengeti, Tanzania","Cairo, Egypt","Tel Aviv, Israel","Istanbul, Turkey","Cappadocia, Turkey"],
+  "🦘 Oceania": ["Sydney, Australia","Melbourne, Australia","Queenstown, New Zealand","Auckland, New Zealand","Great Barrier Reef, Australia"],
+};
+
+const STEPS = ["Trip Details", "Travel Style", "Generate"];
+const emptyStop = () => ({ destination: "", startDate: "", endDate: "" });
+const nightsBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000 + 1);
+
+function StepIndicator({ current }) {
+  return (
+    <div className="flex items-center justify-center gap-3 mb-10">
+      {STEPS.map((s, i) => (
+        <div key={s} className="flex items-center gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i < current ? "bg-amber-400 text-slate-900" : i === current ? "bg-amber-400 text-slate-900 ring-4 ring-amber-400/30" : "bg-slate-700 text-slate-400"}`}>
+              {i < current ? "✓" : i + 1}
+            </div>
+            <span className={`text-xs ${i === current ? "text-amber-400" : "text-slate-500"}`}>{s}</span>
+          </div>
+          {i < STEPS.length - 1 && <div className={`w-12 h-px mb-5 ${i < current ? "bg-amber-400" : "bg-slate-700"}`} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CityStop({ stop, index, onChange, onRemove, canRemove, prevEnd }) {
+  const minStart = prevEnd || "";
+  return (
+    <div className="bg-slate-800/60 border border-slate-600 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
+          {index === 0 ? "🛫 First Stop" : `🗺️ Stop ${index + 1}`}
+        </span>
+        {canRemove && <button onClick={onRemove} className="text-slate-500 hover:text-red-400 text-xs">✕ Remove</button>}
+      </div>
+      <div className="relative">
+        <label className={labelClass}>Destination</label>
+        <input list={`dl-${index}`} className={inputClass} placeholder="Search or type any city/country..."
+          value={stop.destination} onChange={(e) => onChange("destination", e.target.value)} />
+        <datalist id={`dl-${index}`}>
+          {Object.values(DESTINATIONS).flat().map((c) => <option key={c} value={c} />)}
+        </datalist>
+        {stop.destination && <button onClick={() => onChange("destination", "")} className="absolute right-3 top-9 text-slate-400 hover:text-white text-sm">✕</button>}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Arrival</label>
+          <input type="date" className={inputClass} value={stop.startDate} min={minStart}
+            onChange={(e) => onChange("startDate", e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>Departure</label>
+          <input type="date" className={inputClass} value={stop.endDate} min={stop.startDate || minStart}
+            onChange={(e) => onChange("endDate", e.target.value)} />
+        </div>
+      </div>
+      {stop.startDate && stop.endDate && stop.startDate <= stop.endDate && (
+        <div className="text-xs text-amber-400/80 bg-amber-400/10 rounded-lg px-3 py-2">
+          📅 {nightsBetween(stop.startDate, stop.endDate)} nights in {stop.destination || "this city"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [step, setStep] = useState(0);
+  const [stops, setStops] = useState([emptyStop()]);
+  const [form, setForm] = useState({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" });
+  const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [itinerary, setItinerary] = useState(null);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const interestOptions = ["Food & Dining","History & Culture","Art & Museums","Nightlife","Nature & Hiking","Shopping","Architecture","Local Markets","Beaches","Adventure Sports","Spa & Wellness","Family-Friendly"];
+
+  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const updateStop = (i, k, v) => setStops((p) => p.map((s, idx) => idx === i ? { ...s, [k]: v } : s));
+  const addStop = () => setStops((p) => [...p, emptyStop()]);
+  const removeStop = (i) => setStops((p) => p.filter((_, idx) => idx !== i));
+  const toggleInterest = (x) => setForm((f) => ({ ...f, interests: f.interests.includes(x) ? f.interests.filter((y) => y !== x) : [...f.interests, x] }));
+  const totalNights = () => stops.reduce((t, s) => (s.startDate && s.endDate && s.startDate <= s.endDate ? t + nightsBetween(s.startDate, s.endDate) : t), 0);
+  const isMulti = stops.length > 1;
+  const canProceed = stops.some((s) => s.destination);
+
+  const buildPrompt = () => {
+    const pts = form.includePoints ? `\n\nThe client has these credit cards: ${form.cardPortfolio || "not specified"}. Include a "💳 Points & Miles Strategy" section with transfer partners, estimated point values, and booking tips.` : "";
+    const detail = stops.map((s, i) => {
+      const n = s.startDate && s.endDate ? nightsBetween(s.startDate, s.endDate) : "?";
+      return `  Stop ${i + 1}: ${s.destination || "TBD"} — ${s.startDate || "?"} to ${s.endDate || "?"} (${n} nights)`;
+    }).join("\n");
+    const summary = isMulti ? `Multi-city trip:\n${detail}` : `${stops[0].destination} from ${stops[0].startDate || "TBD"} to ${stops[0].endDate || "TBD"} (${totalNights()} nights)`;
+    const cityHeaders = isMulti
+      ? stops.filter((s) => s.destination).map((s) => {
+          const n = s.startDate && s.endDate ? nightsBetween(s.startDate, s.endDate) : 3;
+          return `## 📍 ${s.destination} (${s.startDate || "?"} – ${s.endDate || "?"})\n(Day-by-day plan for all ${n} nights with morning/afternoon/evening, specific restaurants, attractions, tips, costs)`;
+        }).join("\n\n")
+      : `## 🗓️ Day-by-Day Plan\n(Full ${totalNights()}-night plan with morning/afternoon/evening each day, specific restaurants with dishes, attractions with "why go" notes, tips, estimated costs)`;
+
+    return `You are an expert travel planner creating a premium, personalized itinerary for a paying client. Be specific, practical, and enthusiastic.
+
+TRIP DETAILS:
+- ${summary}
+- Departing from: ${form.departureCity || "not specified"}
+- Group size: ${form.groupSize} people
+- Budget level: ${form.budget}
+- Travel pace: ${form.pace}
+- Interests: ${form.interests.length ? form.interests.join(", ") : "general sightseeing"}
+- Special requests: ${form.specialRequests || "none"}${pts}
+
+Create a detailed itinerary with this structure:
+
+# ✈️ ${isMulti ? stops.map((s) => s.destination).filter(Boolean).join(" → ") : stops[0].destination} Itinerary
+
+## 🗺️ Trip Overview
+(2-3 sentences on the trip vibe)
+
+## 📋 Pre-Trip Checklist
+(5-7 practical items)
+
+${cityHeaders}
+
+## 🏨 Where to Stay
+(3 hotel recommendations per city across budget tiers)
+
+## 🍽️ Don't-Miss Restaurants
+(5 standout restaurants per city with cuisine and must-order dishes)
+
+## 💡 Local Tips & Insider Hacks
+(5-7 tips)
+
+## 🚌 Getting Around
+(Transportation overview, including between cities if multi-city)${form.includePoints ? '\n\n## 💳 Points & Miles Strategy\n(Detailed recommendations)' : ''}
+
+Use real place names, real restaurants, and real practical advice only.`;
+  };
+
+  const generate = async () => {
+    setLoading(true); setError(null); setItinerary(null); setStreaming(false);
+    let streamStarted = false;
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: buildPrompt() }),
+      });
+
+      if (!res.ok) {
+        const raw = await res.text();
+        let msg;
+        try { msg = JSON.parse(raw).error; } catch { msg = null; }
+        if (!msg) {
+          msg = res.status === 504 || res.status === 524
+            ? "The request timed out. Try fewer cities or a shorter trip."
+            : `Server error (${res.status}). Please try again.`;
+        }
+        throw new Error(msg);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        if (!streamStarted) {
+          streamStarted = true;
+          setLoading(false);
+          setStreaming(true);
+          setStep(2);
+        }
+        setItinerary(accumulated);
+      }
+
+      if (!accumulated.trim()) throw new Error("Empty response from the server.");
+      setStreaming(false);
+    } catch (e) {
+      setError(e.message);
+      setLoading(false);
+      setStreaming(false);
+    }
+  };
+
+  const copy = () => { navigator.clipboard.writeText(itinerary); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const reset = () => { setStep(0); setItinerary(null); setError(null); setStreaming(false); setStops([emptyStop()]); setForm({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" }); };
+
+  const renderItinerary = (text) => text.split("\n").map((line, i) => {
+    if (line.startsWith("# ")) return <h1 key={i} className="text-2xl font-bold text-amber-400 mt-6 mb-3">{line.slice(2)}</h1>;
+    if (line.startsWith("## ")) return <h2 key={i} className="text-lg font-bold text-white mt-6 mb-2 border-b border-slate-700 pb-1">{line.slice(3)}</h2>;
+    if (line.startsWith("### ")) return <h3 key={i} className="text-base font-semibold text-amber-300 mt-4 mb-1">{line.slice(4)}</h3>;
+    if (line.startsWith("- ") || line.startsWith("* ")) {
+      const parts = line.slice(2).split(/\*\*(.*?)\*\*/g);
+      return <li key={i} className="ml-4 mb-1 text-slate-300 text-sm list-disc">{parts.map((p, j) => j % 2 ? <strong key={j} className="text-white">{p}</strong> : p)}</li>;
+    }
+    if (line.trim() === "") return <div key={i} className="h-2" />;
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    return <p key={i} className="text-slate-300 text-sm mb-1">{parts.map((p, j) => j % 2 ? <strong key={j} className="text-white">{p}</strong> : p)}</p>;
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white">
+      <div className="border-b border-slate-800 px-6 py-5">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div>
+            <div className="text-amber-400 text-xs font-bold tracking-widest uppercase mb-1">Travel Planning</div>
+            <h1 className="text-xl font-bold">Itinerary Generator</h1>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-slate-400">Powered by AI</div>
+            <div className="text-xs text-slate-500">48-hr delivery service</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-6 py-10">
+        {!itinerary && <StepIndicator current={step} />}
+
+        {step === 0 && (
+          <div className="space-y-6">
+            <div><h2 className="text-2xl font-bold mb-1">Where are you headed?</h2><p className="text-slate-400 text-sm">Add one city or build a multi-city route.</p></div>
+            <div className="space-y-4">
+              {stops.map((stop, i) => (
+                <CityStop key={i} stop={stop} index={i} onChange={(k, v) => updateStop(i, k, v)} onRemove={() => removeStop(i)} canRemove={stops.length > 1} prevEnd={i > 0 ? stops[i - 1].endDate : ""} />
+              ))}
+            </div>
+            {stops.length < 6 && <button onClick={addStop} className="w-full py-3 border border-dashed border-slate-600 hover:border-amber-400 text-slate-400 hover:text-amber-400 rounded-xl text-sm font-semibold transition-all">+ Add Another City</button>}
+            {totalNights() > 0 && <div className="bg-amber-400/10 border border-amber-400/30 rounded-xl px-4 py-3 text-sm text-amber-300">🗺️ {stops.filter((s) => s.destination).length} {stops.filter((s) => s.destination).length === 1 ? "city" : "cities"} · {totalNights()} total nights</div>}
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className={labelClass}>Departing From</label><input className={inputClass} placeholder="e.g. Cincinnati (CVG)" value={form.departureCity} onChange={(e) => update("departureCity", e.target.value)} /></div>
+              <div><label className={labelClass}>Group Size</label><select className={inputClass} value={form.groupSize} onChange={(e) => update("groupSize", e.target.value)}>{["1","2","3","4","5","6","7","8","10","12"].map((n) => <option key={n} value={n}>{n} {n === "1" ? "person" : "people"}</option>)}</select></div>
+            </div>
+            <button onClick={() => canProceed && setStep(1)} disabled={!canProceed} className="w-full py-4 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold rounded-xl transition-colors">Continue →</button>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div className="space-y-6">
+            <div><h2 className="text-2xl font-bold mb-1">How do you travel?</h2><p className="text-slate-400 text-sm">This shapes every recommendation we make.</p></div>
+            <div><label className={labelClass}>Budget Level</label><div className="grid grid-cols-3 gap-3">{[["budget","💰 Budget"],["moderate","💳 Moderate"],["luxury","✨ Luxury"]].map(([v, l]) => <button key={v} onClick={() => update("budget", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.budget === v ? "bg-amber-400 text-slate-900 border-amber-400" : "bg-slate-800 text-slate-300 border-slate-600 hover:border-amber-400"}`}>{l}</button>)}</div></div>
+            <div><label className={labelClass}>Travel Pace</label><div className="grid grid-cols-3 gap-3">{[["relaxed","🌿 Relaxed"],["balanced","⚖️ Balanced"],["packed","⚡ Packed"]].map(([v, l]) => <button key={v} onClick={() => update("pace", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.pace === v ? "bg-amber-400 text-slate-900 border-amber-400" : "bg-slate-800 text-slate-300 border-slate-600 hover:border-amber-400"}`}>{l}</button>)}</div></div>
+            <div><label className={labelClass}>Interests (pick all that apply)</label><div className="flex flex-wrap gap-2">{interestOptions.map((x) => <button key={x} onClick={() => toggleInterest(x)} className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${form.interests.includes(x) ? "bg-amber-400 text-slate-900 border-amber-400" : "bg-slate-800 text-slate-300 border-slate-600 hover:border-amber-400"}`}>{x}</button>)}</div></div>
+            <div className="bg-slate-800 border border-slate-600 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div><div className="font-semibold text-sm">💳 Add Points & Miles Strategy</div><div className="text-xs text-slate-400 mt-0.5">Get personalized redemption advice for your cards</div></div>
+                <button onClick={() => update("includePoints", !form.includePoints)} className={`w-12 h-6 rounded-full transition-colors relative ${form.includePoints ? "bg-amber-400" : "bg-slate-600"}`}><div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${form.includePoints ? "left-6" : "left-0.5"}`} /></button>
+              </div>
+              {form.includePoints && <div><label className={labelClass}>Your Credit Cards</label><input className={inputClass} placeholder="e.g. Capital One Venture X, Chase Sapphire Preferred" value={form.cardPortfolio} onChange={(e) => update("cardPortfolio", e.target.value)} /></div>}
+            </div>
+            <div><label className={labelClass}>Special Requests</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="Dietary restrictions, accessibility needs, must-see spots, anniversary trip, etc." value={form.specialRequests} onChange={(e) => update("specialRequests", e.target.value)} /></div>
+            <div className="flex gap-3">
+              <button onClick={() => setStep(0)} className="px-6 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors">← Back</button>
+              <button onClick={generate} className="flex-1 py-4 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-xl transition-colors">Generate My Itinerary ✈️</button>
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="text-center py-20">
+            <div className="text-5xl mb-6 animate-bounce">✈️</div>
+            <div className="text-xl font-bold mb-2">Building your itinerary...</div>
+            <div className="text-slate-400 text-sm">Crafting your {stops.filter((s) => s.destination).map((s) => s.destination).join(" → ")} plan</div>
+            <div className="mt-6 flex justify-center gap-1">{[0,1,2].map((i) => <div key={i} className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}</div>
+          </div>
+        )}
+
+        {error && <div className="bg-red-900/30 border border-red-500 rounded-xl p-4 text-red-300 text-sm">{error}<button onClick={() => setError(null)} className="block mt-2 text-red-400 underline">Try again</button></div>}
+
+        {itinerary && !loading && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold">{streaming ? "Generating your itinerary…" : "Your Itinerary is Ready"}</h2>
+                <p className="text-slate-400 text-sm mt-1">{stops.filter((s) => s.destination).map((s) => s.destination).join(" → ")} · {totalNights()} nights</p>
+              </div>
+              <div className="flex gap-2">
+                {!streaming && <button onClick={copy} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors">{copied ? "✓ Copied!" : "Copy"}</button>}
+                <button onClick={reset} className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 text-sm font-semibold rounded-lg transition-colors">New Trip</button>
+              </div>
+            </div>
+            {streaming && (
+              <div className="flex items-center gap-2 mb-4 text-amber-400 text-xs font-semibold">
+                <div className="flex gap-1">{[0,1,2].map((i) => <div key={i} className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}</div>
+                Writing your itinerary — it will appear below as Claude writes it
+              </div>
+            )}
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 space-y-1">{renderItinerary(itinerary)}</div>
+            {!streaming && <div className="mt-6 bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center"><p className="text-xs text-slate-400">🎯 <span className="text-slate-300 font-semibold">Pro tip:</span> Review this output, add your personal touches, then deliver it as a branded PDF to your client.</p></div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
