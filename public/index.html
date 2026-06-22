@@ -147,7 +147,10 @@ TRIP:
 - Interests: ${form.interests.length ? form.interests.join(", ") : "general sightseeing"}
 - Special requests: ${form.specialRequests || "none"}
 
-CRITICAL: Fill in EVERY day in the day-by-day section. Do not skip days or summarize. Write all ${totalNights()} days completely before moving to the next section.
+CRITICAL RULES:
+1. COMPLETENESS OVER LENGTH. You MUST finish the entire itinerary — every day AND every section through "Getting Around"${form.includePoints ? ' and "Points & Miles Strategy"' : ''}. It is far better to be concise than to run out of room and cut off.
+2. Keep each time block (Morning/Afternoon/Evening) to 1-2 tight sentences. Be specific but not wordy.
+3. Fill in all ${totalNights()} days. Do not skip or summarize days.
 
 Write the itinerary now, using exactly this structure:
 
