@@ -3,14 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Itinerary Generator</title>
+  <title>Explormint — Freshly Minted Itineraries</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #FAF7F0;
+      background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27340%27%20height%3D%27340%27%20viewBox%3D%270%200%20340%20340%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%23bcd9c6%27%20stroke-width%3D%271.7%27%3E%3Ccircle%20cx%3D%2766%27%20cy%3D%2770%27%20r%3D%2730%27%20stroke-dasharray%3D%273%204%27%2F%3E%3Ccircle%20cx%3D%2766%27%20cy%3D%2770%27%20r%3D%2722%27%2F%3E%3Cpath%20d%3D%27M54%2078%20L63%2065%20L69%2073%20L78%2062%20L82%2078%20Z%27%20fill%3D%27%23d6ebe0%27%20stroke%3D%27none%27%2F%3E%3Cg%20transform%3D%27rotate%28-12%20250%2082%29%27%3E%3Crect%20x%3D%27218%27%20y%3D%2758%27%20width%3D%2764%27%20height%3D%2748%27%20rx%3D%273%27%20stroke-dasharray%3D%273%204%27%2F%3E%3Cpath%20d%3D%27M250%2068%20l4%209%20l10%201%20l-7%207%20l2%2010%20l-9%20-5%20l-9%205%20l2%20-10%20l-7%20-7%20l10%20-1%20z%27%20fill%3D%27%23d6ebe0%27%20stroke%3D%27none%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2790%27%20cy%3D%27250%27%20r%3D%2725%27%20stroke-dasharray%3D%273%204%27%2F%3E%3Cpath%20d%3D%27M90%20236%20l4%209%20l10%201%20l-7%207%20l2%2010%20l-9%20-5%20l-9%205%20l2%20-10%20l-7%20-7%20l10%20-1%20z%27%20fill%3D%27%23d6ebe0%27%20stroke%3D%27none%27%2F%3E%3Ccircle%20cx%3D%27272%27%20cy%3D%27262%27%20r%3D%2718%27%2F%3E%3Cpath%20d%3D%27M262%20268%20L270%20257%20L275%20263%20L281%20255%20L285%20268%20Z%27%20fill%3D%27%23d6ebe0%27%20stroke%3D%27none%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+      background-attachment: fixed;
+    }
   </style>
 </head>
 <body>
@@ -19,8 +23,8 @@
   <script type="text/babel">
 const { useState } = React;
 
-const inputClass = "w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-amber-400 transition-colors text-sm";
-const labelClass = "block text-xs font-semibold uppercase tracking-widest text-amber-400 mb-2";
+const inputClass = "w-full bg-white border border-[#ddd4c2] rounded-lg px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm";
+const labelClass = "block text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-2";
 
 const DESTINATIONS = {
   "🌏 Asia": ["Tokyo, Japan","Kyoto, Japan","Osaka, Japan","Seoul, South Korea","Bangkok, Thailand","Chiang Mai, Thailand","Bali, Indonesia","Singapore","Hong Kong","Taipei, Taiwan","Ho Chi Minh City, Vietnam","Hanoi, Vietnam","Hoi An, Vietnam","Phuket, Thailand","Siem Reap, Cambodia","Kathmandu, Nepal","Mumbai, India","Delhi, India","Jaipur, India","Maldives"],
@@ -41,12 +45,12 @@ function StepIndicator({ current }) {
       {STEPS.map((s, i) => (
         <div key={s} className="flex items-center gap-3">
           <div className="flex flex-col items-center gap-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i < current ? "bg-amber-400 text-slate-900" : i === current ? "bg-amber-400 text-slate-900 ring-4 ring-amber-400/30" : "bg-slate-700 text-slate-400"}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i < current ? "bg-emerald-400 text-slate-900" : i === current ? "bg-emerald-400 text-slate-900 ring-4 ring-emerald-400/30" : "bg-slate-200 text-slate-500"}`}>
               {i < current ? "✓" : i + 1}
             </div>
-            <span className={`text-xs ${i === current ? "text-amber-400" : "text-slate-500"}`}>{s}</span>
+            <span className={`text-xs ${i === current ? "text-emerald-600" : "text-slate-500"}`}>{s}</span>
           </div>
-          {i < STEPS.length - 1 && <div className={`w-12 h-px mb-5 ${i < current ? "bg-amber-400" : "bg-slate-700"}`} />}
+          {i < STEPS.length - 1 && <div className={`w-12 h-px mb-5 ${i < current ? "bg-emerald-400" : "bg-slate-200"}`} />}
         </div>
       ))}
     </div>
@@ -56,12 +60,12 @@ function StepIndicator({ current }) {
 function CityStop({ stop, index, onChange, onRemove, canRemove, prevEnd }) {
   const minStart = prevEnd || "";
   return (
-    <div className="bg-slate-800/60 border border-slate-600 rounded-xl p-4 space-y-3">
+    <div className="bg-white/60 border border-[#ddd4c2] rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
+        <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
           {index === 0 ? "🛫 First Stop" : `🗺️ Stop ${index + 1}`}
         </span>
-        {canRemove && <button onClick={onRemove} className="text-slate-500 hover:text-red-400 text-xs">✕ Remove</button>}
+        {canRemove && <button onClick={onRemove} className="text-slate-500 hover:text-red-600 text-xs">✕ Remove</button>}
       </div>
       <div className="relative">
         <label className={labelClass}>Destination</label>
@@ -70,7 +74,7 @@ function CityStop({ stop, index, onChange, onRemove, canRemove, prevEnd }) {
         <datalist id={`dl-${index}`}>
           {Object.values(DESTINATIONS).flat().map((c) => <option key={c} value={c} />)}
         </datalist>
-        {stop.destination && <button onClick={() => onChange("destination", "")} className="absolute right-3 top-9 text-slate-400 hover:text-white text-sm">✕</button>}
+        {stop.destination && <button onClick={() => onChange("destination", "")} className="absolute right-3 top-9 text-slate-500 hover:text-slate-900 text-sm">✕</button>}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -85,7 +89,7 @@ function CityStop({ stop, index, onChange, onRemove, canRemove, prevEnd }) {
         </div>
       </div>
       {stop.startDate && stop.endDate && stop.startDate <= stop.endDate && (
-        <div className="text-xs text-amber-400/80 bg-amber-400/10 rounded-lg px-3 py-2">
+        <div className="text-xs text-emerald-600/80 bg-emerald-400/10 rounded-lg px-3 py-2">
           📅 {nightsBetween(stop.startDate, stop.endDate)} nights in {stop.destination || "this city"}
         </div>
       )}
@@ -228,29 +232,81 @@ How to get between cities and around each city efficiently.${pts}`;
   const copy = () => { navigator.clipboard.writeText(itinerary); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const reset = () => { setStep(0); setItinerary(null); setError(null); setStreaming(false); setStops([emptyStop()]); setForm({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" }); };
 
+  // Convert the markdown itinerary into a clean white print document, then open
+  // the browser's print dialog where the user chooses "Save as PDF".
+  const downloadPDF = () => {
+    const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const inline = (s) => esc(s).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    const lines = itinerary.split("\n");
+    let html = "";
+    let inList = false;
+    const closeList = () => { if (inList) { html += "</ul>"; inList = false; } };
+    for (const line of lines) {
+      if (line.startsWith("# ")) { closeList(); html += `<h1>${inline(line.slice(2))}</h1>`; }
+      else if (line.startsWith("## ")) { closeList(); html += `<h2>${inline(line.slice(3))}</h2>`; }
+      else if (line.startsWith("### ")) { closeList(); html += `<h3>${inline(line.slice(4))}</h3>`; }
+      else if (line.startsWith("- ") || line.startsWith("* ")) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${inline(line.slice(2))}</li>`; }
+      else if (line.trim() === "") { closeList(); }
+      else { closeList(); html += `<p>${inline(line)}</p>`; }
+    }
+    closeList();
+
+    const title = stops.filter((s) => s.destination).map((s) => s.destination).join(" → ") || "Itinerary";
+    const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)} Itinerary</title><style>
+      @page { margin: 18mm 16mm; }
+      * { box-sizing: border-box; }
+      body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1e293b; line-height: 1.55; max-width: 760px; margin: 0 auto; padding: 24px; }
+      .brand { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 24px; }
+      .brand .name { font-size: 22px; font-weight: 800; letter-spacing: .5px; color: #047857; }
+      .brand .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #059669; font-weight: 700; }
+      h1 { font-size: 24px; color: #0f172a; margin: 18px 0 8px; }
+      h2 { font-size: 17px; color: #0f172a; margin: 22px 0 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+      h3 { font-size: 14px; color: #059669; margin: 14px 0 4px; }
+      p { font-size: 12.5px; margin: 4px 0; }
+      ul { margin: 4px 0 4px 18px; padding: 0; }
+      li { font-size: 12.5px; margin: 3px 0; }
+      strong { color: #0f172a; }
+      .footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center; }
+      h1, h2, h3 { page-break-after: avoid; }
+      li, p { page-break-inside: avoid; }
+    </style></head><body>
+      <div class="brand"><div class="tag">Freshly Minted Itineraries</div><div class="name">Explormint</div></div>
+      ${html}
+      <div class="footer">Prepared by Explormint · ${new Date().toLocaleDateString()}</div>
+    </body></html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) { alert("Please allow pop-ups for this site to download the PDF."); return; }
+    w.document.write(doc);
+    w.document.close();
+    w.focus();
+    // Give the new window a moment to render before opening the print dialog.
+    setTimeout(() => { w.print(); }, 400);
+  };
+
   const renderItinerary = (text) => text.split("\n").map((line, i) => {
-    if (line.startsWith("# ")) return <h1 key={i} className="text-2xl font-bold text-amber-400 mt-6 mb-3">{line.slice(2)}</h1>;
-    if (line.startsWith("## ")) return <h2 key={i} className="text-lg font-bold text-white mt-6 mb-2 border-b border-slate-700 pb-1">{line.slice(3)}</h2>;
-    if (line.startsWith("### ")) return <h3 key={i} className="text-base font-semibold text-amber-300 mt-4 mb-1">{line.slice(4)}</h3>;
+    if (line.startsWith("# ")) return <h1 key={i} className="text-2xl font-bold text-emerald-600 mt-6 mb-3">{line.slice(2)}</h1>;
+    if (line.startsWith("## ")) return <h2 key={i} className="text-lg font-bold text-slate-900 mt-6 mb-2 border-b border-[#e7e0d0] pb-1">{line.slice(3)}</h2>;
+    if (line.startsWith("### ")) return <h3 key={i} className="text-base font-semibold text-emerald-700 mt-4 mb-1">{line.slice(4)}</h3>;
     if (line.startsWith("- ") || line.startsWith("* ")) {
       const parts = line.slice(2).split(/\*\*(.*?)\*\*/g);
-      return <li key={i} className="ml-4 mb-1 text-slate-300 text-sm list-disc">{parts.map((p, j) => j % 2 ? <strong key={j} className="text-white">{p}</strong> : p)}</li>;
+      return <li key={i} className="ml-4 mb-1 text-slate-700 text-sm list-disc">{parts.map((p, j) => j % 2 ? <strong key={j} className="text-slate-900">{p}</strong> : p)}</li>;
     }
     if (line.trim() === "") return <div key={i} className="h-2" />;
     const parts = line.split(/\*\*(.*?)\*\*/g);
-    return <p key={i} className="text-slate-300 text-sm mb-1">{parts.map((p, j) => j % 2 ? <strong key={j} className="text-white">{p}</strong> : p)}</p>;
+    return <p key={i} className="text-slate-700 text-sm mb-1">{parts.map((p, j) => j % 2 ? <strong key={j} className="text-slate-900">{p}</strong> : p)}</p>;
   });
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <div className="border-b border-slate-800 px-6 py-5">
+    <div className="min-h-screen text-slate-900">
+      <div className="border-b border-[#e7e0d0] px-6 py-5">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
-            <div className="text-amber-400 text-xs font-bold tracking-widest uppercase mb-1">Travel Planning</div>
-            <h1 className="text-xl font-bold">Itinerary Generator</h1>
+            <div className="text-emerald-600 text-xs font-bold tracking-widest uppercase mb-1">Freshly Minted Itineraries</div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">Explormint</h1>
           </div>
           <div className="text-right">
-            <div className="text-xs text-slate-400">Powered by AI</div>
+            <div className="text-xs text-slate-500">Powered by AI</div>
             <div className="text-xs text-slate-500">48-hr delivery service</div>
           </div>
         </div>
@@ -261,39 +317,39 @@ How to get between cities and around each city efficiently.${pts}`;
 
         {step === 0 && (
           <div className="space-y-6">
-            <div><h2 className="text-2xl font-bold mb-1">Where are you headed?</h2><p className="text-slate-400 text-sm">Add one city or build a multi-city route.</p></div>
+            <div><h2 className="text-2xl font-bold mb-1">Where are you headed?</h2><p className="text-slate-500 text-sm">Add one city or build a multi-city route.</p></div>
             <div className="space-y-4">
               {stops.map((stop, i) => (
                 <CityStop key={i} stop={stop} index={i} onChange={(k, v) => updateStop(i, k, v)} onRemove={() => removeStop(i)} canRemove={stops.length > 1} prevEnd={i > 0 ? stops[i - 1].endDate : ""} />
               ))}
             </div>
-            {stops.length < 6 && <button onClick={addStop} className="w-full py-3 border border-dashed border-slate-600 hover:border-amber-400 text-slate-400 hover:text-amber-400 rounded-xl text-sm font-semibold transition-all">+ Add Another City</button>}
-            {totalNights() > 0 && <div className="bg-amber-400/10 border border-amber-400/30 rounded-xl px-4 py-3 text-sm text-amber-300">🗺️ {stops.filter((s) => s.destination).length} {stops.filter((s) => s.destination).length === 1 ? "city" : "cities"} · {totalNights()} total nights</div>}
+            {stops.length < 6 && <button onClick={addStop} className="w-full py-3 border border-dashed border-[#ddd4c2] hover:border-emerald-400 text-slate-500 hover:text-emerald-600 rounded-xl text-sm font-semibold transition-all">+ Add Another City</button>}
+            {totalNights() > 0 && <div className="bg-emerald-400/10 border border-emerald-400/30 rounded-xl px-4 py-3 text-sm text-emerald-700">🗺️ {stops.filter((s) => s.destination).length} {stops.filter((s) => s.destination).length === 1 ? "city" : "cities"} · {totalNights()} total nights</div>}
             <div className="grid grid-cols-2 gap-4">
               <div><label className={labelClass}>Departing From</label><input className={inputClass} placeholder="e.g. Cincinnati (CVG)" value={form.departureCity} onChange={(e) => update("departureCity", e.target.value)} /></div>
               <div><label className={labelClass}>Group Size</label><select className={inputClass} value={form.groupSize} onChange={(e) => update("groupSize", e.target.value)}>{["1","2","3","4","5","6","7","8","10","12"].map((n) => <option key={n} value={n}>{n} {n === "1" ? "person" : "people"}</option>)}</select></div>
             </div>
-            <button onClick={() => canProceed && setStep(1)} disabled={!canProceed} className="w-full py-4 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold rounded-xl transition-colors">Continue →</button>
+            <button onClick={() => canProceed && setStep(1)} disabled={!canProceed} className="w-full py-4 bg-emerald-400 hover:bg-emerald-300 disabled:bg-slate-200 disabled:text-slate-500 text-slate-900 font-bold rounded-xl transition-colors">Continue →</button>
           </div>
         )}
 
         {step === 1 && (
           <div className="space-y-6">
-            <div><h2 className="text-2xl font-bold mb-1">How do you travel?</h2><p className="text-slate-400 text-sm">This shapes every recommendation we make.</p></div>
-            <div><label className={labelClass}>Budget Level</label><div className="grid grid-cols-3 gap-3">{[["budget","💰 Budget"],["moderate","💳 Moderate"],["luxury","✨ Luxury"]].map(([v, l]) => <button key={v} onClick={() => update("budget", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.budget === v ? "bg-amber-400 text-slate-900 border-amber-400" : "bg-slate-800 text-slate-300 border-slate-600 hover:border-amber-400"}`}>{l}</button>)}</div></div>
-            <div><label className={labelClass}>Travel Pace</label><div className="grid grid-cols-3 gap-3">{[["relaxed","🌿 Relaxed"],["balanced","⚖️ Balanced"],["packed","⚡ Packed"]].map(([v, l]) => <button key={v} onClick={() => update("pace", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.pace === v ? "bg-amber-400 text-slate-900 border-amber-400" : "bg-slate-800 text-slate-300 border-slate-600 hover:border-amber-400"}`}>{l}</button>)}</div></div>
-            <div><label className={labelClass}>Interests (pick all that apply)</label><div className="flex flex-wrap gap-2">{interestOptions.map((x) => <button key={x} onClick={() => toggleInterest(x)} className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${form.interests.includes(x) ? "bg-amber-400 text-slate-900 border-amber-400" : "bg-slate-800 text-slate-300 border-slate-600 hover:border-amber-400"}`}>{x}</button>)}</div></div>
-            <div className="bg-slate-800 border border-slate-600 rounded-xl p-4">
+            <div><h2 className="text-2xl font-bold mb-1">How do you travel?</h2><p className="text-slate-500 text-sm">This shapes every recommendation we make.</p></div>
+            <div><label className={labelClass}>Budget Level</label><div className="grid grid-cols-3 gap-3">{[["budget","💰 Budget"],["moderate","💳 Moderate"],["luxury","✨ Luxury"]].map(([v, l]) => <button key={v} onClick={() => update("budget", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.budget === v ? "bg-emerald-400 text-slate-900 border-emerald-400" : "bg-white text-slate-700 border-[#ddd4c2] hover:border-emerald-400"}`}>{l}</button>)}</div></div>
+            <div><label className={labelClass}>Travel Pace</label><div className="grid grid-cols-3 gap-3">{[["relaxed","🌿 Relaxed"],["balanced","⚖️ Balanced"],["packed","⚡ Packed"]].map(([v, l]) => <button key={v} onClick={() => update("pace", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.pace === v ? "bg-emerald-400 text-slate-900 border-emerald-400" : "bg-white text-slate-700 border-[#ddd4c2] hover:border-emerald-400"}`}>{l}</button>)}</div></div>
+            <div><label className={labelClass}>Interests (pick all that apply)</label><div className="flex flex-wrap gap-2">{interestOptions.map((x) => <button key={x} onClick={() => toggleInterest(x)} className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${form.interests.includes(x) ? "bg-emerald-400 text-slate-900 border-emerald-400" : "bg-white text-slate-700 border-[#ddd4c2] hover:border-emerald-400"}`}>{x}</button>)}</div></div>
+            <div className="bg-white border border-[#ddd4c2] rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <div><div className="font-semibold text-sm">💳 Add Points & Miles Strategy</div><div className="text-xs text-slate-400 mt-0.5">Get personalized redemption advice for your cards</div></div>
-                <button onClick={() => update("includePoints", !form.includePoints)} className={`w-12 h-6 rounded-full transition-colors relative ${form.includePoints ? "bg-amber-400" : "bg-slate-600"}`}><div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${form.includePoints ? "left-6" : "left-0.5"}`} /></button>
+                <div><div className="font-semibold text-sm">💳 Add Points & Miles Strategy</div><div className="text-xs text-slate-500 mt-0.5">Get personalized redemption advice for your cards</div></div>
+                <button onClick={() => update("includePoints", !form.includePoints)} className={`w-12 h-6 rounded-full transition-colors relative ${form.includePoints ? "bg-emerald-400" : "bg-slate-300"}`}><div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${form.includePoints ? "left-6" : "left-0.5"}`} /></button>
               </div>
               {form.includePoints && <div><label className={labelClass}>Your Credit Cards</label><input className={inputClass} placeholder="e.g. Capital One Venture X, Chase Sapphire Preferred" value={form.cardPortfolio} onChange={(e) => update("cardPortfolio", e.target.value)} /></div>}
             </div>
             <div><label className={labelClass}>Special Requests</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="Dietary restrictions, accessibility needs, must-see spots, anniversary trip, etc." value={form.specialRequests} onChange={(e) => update("specialRequests", e.target.value)} /></div>
             <div className="flex gap-3">
-              <button onClick={() => setStep(0)} className="px-6 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors">← Back</button>
-              <button onClick={generate} className="flex-1 py-4 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-xl transition-colors">Generate My Itinerary ✈️</button>
+              <button onClick={() => setStep(0)} className="px-6 py-4 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">← Back</button>
+              <button onClick={generate} className="flex-1 py-4 bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-bold rounded-xl transition-colors">Generate My Itinerary ✈️</button>
             </div>
           </div>
         )}
@@ -302,33 +358,34 @@ How to get between cities and around each city efficiently.${pts}`;
           <div className="text-center py-20">
             <div className="text-5xl mb-6 animate-bounce">✈️</div>
             <div className="text-xl font-bold mb-2">Building your itinerary...</div>
-            <div className="text-slate-400 text-sm">Crafting your {stops.filter((s) => s.destination).map((s) => s.destination).join(" → ")} plan</div>
-            <div className="mt-6 flex justify-center gap-1">{[0,1,2].map((i) => <div key={i} className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}</div>
+            <div className="text-slate-500 text-sm">Crafting your {stops.filter((s) => s.destination).map((s) => s.destination).join(" → ")} plan</div>
+            <div className="mt-6 flex justify-center gap-1">{[0,1,2].map((i) => <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}</div>
           </div>
         )}
 
-        {error && <div className="bg-red-900/30 border border-red-500 rounded-xl p-4 text-red-300 text-sm">{error}<button onClick={() => setError(null)} className="block mt-2 text-red-400 underline">Try again</button></div>}
+        {error && <div className="bg-red-50 border border-red-300 rounded-xl p-4 text-red-700 text-sm">{error}<button onClick={() => setError(null)} className="block mt-2 text-red-600 underline">Try again</button></div>}
 
         {itinerary && !loading && (
           <div>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold">{streaming ? "Generating your itinerary…" : "Your Itinerary is Ready"}</h2>
-                <p className="text-slate-400 text-sm mt-1">{stops.filter((s) => s.destination).map((s) => s.destination).join(" → ")} · {totalNights()} nights</p>
+                <p className="text-slate-500 text-sm mt-1">{stops.filter((s) => s.destination).map((s) => s.destination).join(" → ")} · {totalNights()} nights</p>
               </div>
               <div className="flex gap-2">
-                {!streaming && <button onClick={copy} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors">{copied ? "✓ Copied!" : "Copy"}</button>}
-                <button onClick={reset} className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 text-sm font-semibold rounded-lg transition-colors">New Trip</button>
+                {!streaming && <button onClick={copy} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 text-sm font-semibold rounded-lg transition-colors">{copied ? "✓ Copied!" : "Copy"}</button>}
+                {!streaming && <button onClick={downloadPDF} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 text-sm font-semibold rounded-lg transition-colors">📄 PDF</button>}
+                <button onClick={reset} className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-900 text-sm font-semibold rounded-lg transition-colors">New Trip</button>
               </div>
             </div>
             {streaming && (
-              <div className="flex items-center gap-2 mb-4 text-amber-400 text-xs font-semibold">
-                <div className="flex gap-1">{[0,1,2].map((i) => <div key={i} className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}</div>
+              <div className="flex items-center gap-2 mb-4 text-emerald-600 text-xs font-semibold">
+                <div className="flex gap-1">{[0,1,2].map((i) => <div key={i} className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}</div>
                 Writing your itinerary — it will appear below as Claude writes it
               </div>
             )}
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 space-y-1">{renderItinerary(itinerary)}</div>
-            {!streaming && <div className="mt-6 bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center"><p className="text-xs text-slate-400">🎯 <span className="text-slate-300 font-semibold">Pro tip:</span> Review this output, add your personal touches, then deliver it as a branded PDF to your client.</p></div>}
+            <div className="bg-white border border-[#e7e0d0] rounded-2xl p-6 space-y-1">{renderItinerary(itinerary)}</div>
+            {!streaming && <div className="mt-6 bg-white/50 border border-[#e7e0d0] rounded-xl p-4 text-center"><p className="text-xs text-slate-500">🎯 <span className="text-slate-700 font-semibold">Pro tip:</span> Review this output, add your personal touches, then deliver it as a branded PDF to your client.</p></div>}
           </div>
         )}
       </div>
