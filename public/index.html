@@ -20,6 +20,29 @@
 <body>
   <div id="root"></div>
 
+  <!-- Searchable lists of world places and airports (loaded once, outside React for speed) -->
+  <datalist id="places"></datalist>
+  <datalist id="airports"></datalist>
+  <script src="/public/data/places.js"></script>
+  <script src="/public/data/airports.js"></script>
+  <script>
+    (function () {
+      function fill(id, arr) {
+        var dl = document.getElementById(id);
+        if (!dl || !arr) return;
+        var frag = document.createDocumentFragment();
+        for (var i = 0; i < arr.length; i++) {
+          var o = document.createElement("option");
+          o.value = arr[i];
+          frag.appendChild(o);
+        }
+        dl.appendChild(frag);
+      }
+      fill("places", window.PLACES);
+      fill("airports", window.AIRPORTS);
+    })();
+  </script>
+
   <script type="text/babel">
 const { useState, useEffect } = React;
 
@@ -27,15 +50,6 @@ const PRICE_LABEL = "$19.99";
 
 const inputClass = "w-full bg-white border border-[#ddd4c2] rounded-lg px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm";
 const labelClass = "block text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-2";
-
-const DESTINATIONS = {
-  "🌏 Asia": ["Tokyo, Japan","Kyoto, Japan","Osaka, Japan","Seoul, South Korea","Bangkok, Thailand","Chiang Mai, Thailand","Bali, Indonesia","Singapore","Hong Kong","Taipei, Taiwan","Ho Chi Minh City, Vietnam","Hanoi, Vietnam","Hoi An, Vietnam","Phuket, Thailand","Siem Reap, Cambodia","Kathmandu, Nepal","Mumbai, India","Delhi, India","Jaipur, India","Maldives"],
-  "🌍 Europe": ["Paris, France","London, England","Rome, Italy","Florence, Italy","Venice, Italy","Amsterdam, Netherlands","Barcelona, Spain","Madrid, Spain","Lisbon, Portugal","Porto, Portugal","Prague, Czech Republic","Budapest, Hungary","Vienna, Austria","Santorini, Greece","Athens, Greece","Dubrovnik, Croatia","Edinburgh, Scotland","Dublin, Ireland","Copenhagen, Denmark","Stockholm, Sweden","Oslo, Norway","Reykjavik, Iceland","Zurich, Switzerland","Munich, Germany","Berlin, Germany","Brussels, Belgium","Bruges, Belgium","Amalfi Coast, Italy"],
-  "🌎 Americas": ["New York City, USA","Los Angeles, USA","Chicago, USA","Miami, USA","New Orleans, USA","San Francisco, USA","Las Vegas, USA","Nashville, USA","Cancun, Mexico","Mexico City, Mexico","Tulum, Mexico","Puerto Vallarta, Mexico","Toronto, Canada","Vancouver, Canada","Montreal, Canada","Quebec City, Canada","Rio de Janeiro, Brazil","Buenos Aires, Argentina","Cartagena, Colombia","Machu Picchu, Peru","Lima, Peru","Havana, Cuba","San José, Costa Rica"],
-  "🌴 Caribbean & Pacific": ["Turks and Caicos","Aruba","St. Lucia","Barbados","Jamaica","Bahamas","Bora Bora, French Polynesia","Fiji","Hawaii, USA","Punta Cana, Dominican Republic","Cabo San Lucas, Mexico"],
-  "🌏 Middle East & Africa": ["Dubai, UAE","Abu Dhabi, UAE","Marrakech, Morocco","Cape Town, South Africa","Zanzibar, Tanzania","Serengeti, Tanzania","Cairo, Egypt","Tel Aviv, Israel","Istanbul, Turkey","Cappadocia, Turkey"],
-  "🦘 Oceania": ["Sydney, Australia","Melbourne, Australia","Queenstown, New Zealand","Auckland, New Zealand","Great Barrier Reef, Australia"],
-};
 
 const STEPS = ["Trip Details", "Travel Style", "Generate"];
 const emptyStop = () => ({ destination: "", startDate: "", endDate: "" });
@@ -71,11 +85,8 @@ function CityStop({ stop, index, onChange, onRemove, canRemove, prevEnd }) {
       </div>
       <div className="relative">
         <label className={labelClass}>Destination</label>
-        <input list={`dl-${index}`} className={inputClass} placeholder="Search or type any city/country..."
+        <input list="places" className={inputClass} placeholder="Search or type any city, state, or country..."
           value={stop.destination} onChange={(e) => onChange("destination", e.target.value)} />
-        <datalist id={`dl-${index}`}>
-          {Object.values(DESTINATIONS).flat().map((c) => <option key={c} value={c} />)}
-        </datalist>
         {stop.destination && <button onClick={() => onChange("destination", "")} className="absolute right-3 top-9 text-slate-500 hover:text-slate-900 text-sm">✕</button>}
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -102,7 +113,7 @@ function CityStop({ stop, index, onChange, onRemove, canRemove, prevEnd }) {
 function App() {
   const [step, setStep] = useState(0);
   const [stops, setStops] = useState([emptyStop()]);
-  const [form, setForm] = useState({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" });
+  const [form, setForm] = useState({ departureCity: "", travelMode: "flying", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" });
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
   const [streaming, setStreaming] = useState(false);
@@ -125,6 +136,25 @@ function App() {
     const pts = form.includePoints
       ? `\n\n## 💳 Points & Miles Strategy\nCards: ${form.cardPortfolio || "not specified"}. Best transfer partners, estimated point values for flights/hotels, and 2-3 specific booking tips.`
       : "";
+
+    const mode = form.travelMode || "flying";
+    const modeLabel = mode === "driving" ? "Road trip (self-drive)" : mode === "mixed" ? "Mixed (flights + driving)" : "Flying";
+    const headerIcon = mode === "driving" ? "🚗" : mode === "mixed" ? "🧭" : "✈️";
+    const driveRule = mode === "driving" || mode === "mixed"
+      ? `\n4. On any day that involves driving between stops, state the drive time and distance for that leg inside the day's plan.`
+      : "";
+    const gettingAround = mode === "driving"
+      ? `## 🚗 The Drive & Road-Trip Logistics
+- Driving route connecting every stop in order, with estimated drive time AND distance for each leg.
+- 2-3 scenic detours or worthwhile roadside stops along the way.
+- Car rental advice, parking notes per city, fuel/EV-charging tips, tolls, and a quick road-trip packing note.`
+      : mode === "mixed"
+      ? `## 🧭 Getting Between Stops
+- For each leg between cities, recommend the best option (flight, drive, or train) with rough time and cost, and why.
+- For driving legs include drive time + one scenic stop; for flights include airport-transfer tips.
+- How to get around within each city.`
+      : `## 🚌 Getting Around
+Transportation between cities (flights and airport transfers) and the best way to get around within each city.`;
     const detail = stops.map((s, i) => {
       const n = s.startDate && s.endDate ? nightsBetween(s.startDate, s.endDate) : "?";
       return `  Stop ${i + 1}: ${s.destination || "TBD"} — ${s.startDate || "?"} to ${s.endDate || "?"} (${n} nights)`;
@@ -147,7 +177,8 @@ function App() {
 
 TRIP:
 - ${summary}
-- From: ${form.departureCity || "not specified"}
+- Travel mode: ${modeLabel}
+- ${mode === "flying" ? "Departing from" : "Starting from"}: ${form.departureCity || "not specified"}
 - Group: ${form.groupSize} people
 - Budget: ${form.budget}
 - Pace: ${form.pace}
@@ -155,13 +186,13 @@ TRIP:
 - Special requests: ${form.specialRequests || "none"}
 
 CRITICAL RULES:
-1. COMPLETENESS OVER LENGTH. You MUST finish the entire itinerary — every day AND every section through "Getting Around"${form.includePoints ? ' and "Points & Miles Strategy"' : ''}. It is far better to be concise than to run out of room and cut off.
+1. COMPLETENESS OVER LENGTH. You MUST finish the entire itinerary — every day AND every section through the final logistics section${form.includePoints ? ' and "Points & Miles Strategy"' : ''}. It is far better to be concise than to run out of room and cut off.
 2. Keep each time block (Morning/Afternoon/Evening) to 1-2 tight sentences. Be specific but not wordy.
-3. Fill in all ${totalNights()} days. Do not skip or summarize days.
+3. Fill in all ${totalNights()} days. Do not skip or summarize days.${driveRule}
 
 Write the itinerary now, using exactly this structure:
 
-# ✈️ ${isMulti ? stops.map((s) => s.destination).filter(Boolean).join(" → ") : stops[0].destination} Itinerary
+# ${headerIcon} ${isMulti ? stops.map((s) => s.destination).filter(Boolean).join(" → ") : stops[0].destination} Itinerary
 
 ## 🗺️ Trip Overview
 2-3 sentences on the overall vibe and what makes this trip special.
@@ -180,8 +211,7 @@ For each city: 3 standout restaurants with cuisine type and the one dish to orde
 ## 💡 Local Tips
 5 insider tips that most tourists miss.
 
-## 🚌 Getting Around
-How to get between cities and around each city efficiently.${pts}`;
+${gettingAround}${pts}`;
   };
 
   // Step 1: send the customer to Stripe's secure payment page.
@@ -275,7 +305,7 @@ How to get between cities and around each city efficiently.${pts}`;
   }, []);
 
   const copy = () => { navigator.clipboard.writeText(itinerary); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  const reset = () => { setStep(0); setItinerary(null); setError(null); setStreaming(false); setStops([emptyStop()]); setForm({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" }); };
+  const reset = () => { setStep(0); setItinerary(null); setError(null); setStreaming(false); setStops([emptyStop()]); setForm({ departureCity: "", travelMode: "flying", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" }); };
 
   // Convert the markdown itinerary into a clean white print document, then open
   // the browser's print dialog where the user chooses "Save as PDF".
@@ -370,8 +400,16 @@ How to get between cities and around each city efficiently.${pts}`;
             </div>
             {stops.length < 6 && <button onClick={addStop} className="w-full py-3 border border-dashed border-[#ddd4c2] hover:border-emerald-400 text-slate-500 hover:text-emerald-600 rounded-xl text-sm font-semibold transition-all">+ Add Another City</button>}
             {totalNights() > 0 && <div className="bg-emerald-400/10 border border-emerald-400/30 rounded-xl px-4 py-3 text-sm text-emerald-700">🗺️ {stops.filter((s) => s.destination).length} {stops.filter((s) => s.destination).length === 1 ? "city" : "cities"} · {totalNights()} total nights</div>}
+            <div>
+              <label className={labelClass}>How are you traveling?</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[["flying","✈️ Flying"],["driving","🚗 Road Trip"],["mixed","🧭 Mixed"]].map(([v, l]) => (
+                  <button key={v} onClick={() => update("travelMode", v)} className={`py-3 rounded-xl text-sm font-semibold border transition-all ${form.travelMode === v ? "bg-emerald-400 text-slate-900 border-emerald-400" : "bg-white text-slate-700 border-[#ddd4c2] hover:border-emerald-400"}`}>{l}</button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className={labelClass}>Departing From</label><input className={inputClass} placeholder="e.g. Cincinnati (CVG)" value={form.departureCity} onChange={(e) => update("departureCity", e.target.value)} /></div>
+              <div><label className={labelClass}>{form.travelMode === "flying" ? "Departing From" : "Starting From"}</label><input list={form.travelMode === "flying" ? "airports" : "places"} className={inputClass} placeholder={form.travelMode === "flying" ? "Search airports, e.g. Cincinnati (CVG)" : "Search or type a city/state"} value={form.departureCity} onChange={(e) => update("departureCity", e.target.value)} /></div>
               <div><label className={labelClass}>Group Size</label><select className={inputClass} value={form.groupSize} onChange={(e) => update("groupSize", e.target.value)}>{["1","2","3","4","5","6","7","8","10","12"].map((n) => <option key={n} value={n}>{n} {n === "1" ? "person" : "people"}</option>)}</select></div>
             </div>
             <button onClick={() => canProceed && setStep(1)} disabled={!canProceed} className="w-full py-4 bg-emerald-400 hover:bg-emerald-300 disabled:bg-slate-200 disabled:text-slate-500 text-slate-900 font-bold rounded-xl transition-colors">Continue →</button>
