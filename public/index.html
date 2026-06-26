@@ -21,7 +21,9 @@
   <div id="root"></div>
 
   <script type="text/babel">
-const { useState } = React;
+const { useState, useEffect } = React;
+
+const PRICE_LABEL = "$19.99";
 
 const inputClass = "w-full bg-white border border-[#ddd4c2] rounded-lg px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition-colors text-sm";
 const labelClass = "block text-xs font-semibold uppercase tracking-widest text-emerald-600 mb-2";
@@ -102,6 +104,7 @@ function App() {
   const [stops, setStops] = useState([emptyStop()]);
   const [form, setForm] = useState({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" });
   const [loading, setLoading] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [itinerary, setItinerary] = useState(null);
   const [error, setError] = useState(null);
@@ -181,14 +184,32 @@ For each city: 3 standout restaurants with cuisine type and the one dish to orde
 How to get between cities and around each city efficiently.${pts}`;
   };
 
-  const generate = async () => {
+  // Step 1: send the customer to Stripe's secure payment page.
+  const startCheckout = async () => {
+    setPaying(true); setError(null);
+    try {
+      // Save the trip so we can generate it after the customer returns from Stripe.
+      localStorage.setItem("explormint_pending", JSON.stringify({ prompt: buildPrompt(), stops, form }));
+      const res = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" } });
+      const raw = await res.text();
+      let data; try { data = JSON.parse(raw); } catch { data = {}; }
+      if (!res.ok || !data.url) throw new Error(data.error || "Could not start checkout. Please try again.");
+      window.location.href = data.url; // redirect to Stripe
+    } catch (e) {
+      setError(e.message);
+      setPaying(false);
+    }
+  };
+
+  // Step 2: after payment, generate the itinerary (server re-verifies the payment).
+  const runGeneration = async (prompt, sessionId) => {
     setLoading(true); setError(null); setItinerary(null); setStreaming(false);
     let streamStarted = false;
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: buildPrompt() }),
+        body: JSON.stringify({ prompt, sessionId }),
       });
 
       if (!res.ok) {
@@ -222,12 +243,36 @@ How to get between cities and around each city efficiently.${pts}`;
 
       if (!accumulated.trim()) throw new Error("Empty response from the server.");
       setStreaming(false);
+      localStorage.removeItem("explormint_pending"); // consumed — don't regenerate on refresh
     } catch (e) {
       setError(e.message);
       setLoading(false);
       setStreaming(false);
     }
   };
+
+  // On return from Stripe: ?paid=<session_id> means payment succeeded → generate.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paid = params.get("paid");
+    const canceled = params.get("canceled");
+    if (paid) {
+      window.history.replaceState({}, "", window.location.pathname); // clean the URL
+      let pending = null;
+      try { pending = JSON.parse(localStorage.getItem("explormint_pending")); } catch {}
+      if (pending && pending.prompt) {
+        if (pending.stops) setStops(pending.stops);
+        if (pending.form) setForm(pending.form);
+        setStep(2);
+        runGeneration(pending.prompt, paid);
+      } else {
+        setError("Payment succeeded, but we couldn't find your trip details (they may have been cleared). Please re-enter your trip — and contact support if you were charged without receiving an itinerary.");
+      }
+    } else if (canceled) {
+      window.history.replaceState({}, "", window.location.pathname);
+      setError("Payment canceled — you have not been charged. You can try again whenever you're ready.");
+    }
+  }, []);
 
   const copy = () => { navigator.clipboard.writeText(itinerary); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const reset = () => { setStep(0); setItinerary(null); setError(null); setStreaming(false); setStops([emptyStop()]); setForm({ departureCity: "", groupSize: "2", budget: "moderate", interests: [], pace: "balanced", includePoints: false, cardPortfolio: "", specialRequests: "" }); };
@@ -348,9 +393,10 @@ How to get between cities and around each city efficiently.${pts}`;
             </div>
             <div><label className={labelClass}>Special Requests</label><textarea className={`${inputClass} resize-none`} rows={3} placeholder="Dietary restrictions, accessibility needs, must-see spots, anniversary trip, etc." value={form.specialRequests} onChange={(e) => update("specialRequests", e.target.value)} /></div>
             <div className="flex gap-3">
-              <button onClick={() => setStep(0)} className="px-6 py-4 bg-white hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors">← Back</button>
-              <button onClick={generate} className="flex-1 py-4 bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-bold rounded-xl transition-colors">Generate My Itinerary ✈️</button>
+              <button onClick={() => setStep(0)} disabled={paying} className="px-6 py-4 bg-white hover:bg-slate-200 disabled:opacity-50 text-slate-900 font-bold rounded-xl transition-colors">← Back</button>
+              <button onClick={startCheckout} disabled={paying} className="flex-1 py-4 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-60 text-slate-900 font-bold rounded-xl transition-colors">{paying ? "Redirecting to secure checkout…" : `Pay & Generate · ${PRICE_LABEL} ✈️`}</button>
             </div>
+            <p className="text-center text-xs text-slate-500">🔒 Secure payment via Stripe · You'll be charged {PRICE_LABEL} for one custom itinerary</p>
           </div>
         )}
 

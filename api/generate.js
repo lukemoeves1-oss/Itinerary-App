@@ -17,10 +17,11 @@ export default async function handler(req) {
     );
   }
 
-  let prompt;
+  let prompt, sessionId;
   try {
     const body = await req.json();
     prompt = body.prompt;
+    sessionId = body.sessionId;
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid request body.' }), {
       status: 400,
@@ -31,6 +32,31 @@ export default async function handler(req) {
   if (!prompt) {
     return new Response(JSON.stringify({ error: 'Missing prompt.' }), {
       status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Verify the customer actually paid before spending any API credits.
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey) {
+    return new Response(
+      JSON.stringify({ error: 'Server is missing STRIPE_SECRET_KEY. Add it in your Vercel dashboard.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+  if (!sessionId) {
+    return new Response(JSON.stringify({ error: 'Payment required. Please complete checkout first.' }), {
+      status: 402,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const verifyRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`, {
+    headers: { Authorization: `Bearer ${stripeKey}` },
+  });
+  const session = await verifyRes.json().catch(() => ({}));
+  if (!verifyRes.ok || session.payment_status !== 'paid') {
+    return new Response(JSON.stringify({ error: 'We could not verify your payment. If you were charged, please contact support.' }), {
+      status: 402,
       headers: { 'Content-Type': 'application/json' },
     });
   }
